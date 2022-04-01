@@ -14,7 +14,8 @@ const request = require('request'),
 const ARCH_MAPPING = {
     "ia32": "386",
     "x64": "amd64",
-    "arm": "arm"
+    "arm": "arm",
+    "arm64": "arm64"
 };
 
 // Mapping between Node's `process.platform` to Golang's 
@@ -28,10 +29,10 @@ const PLATFORM_MAPPING = {
 function getInstallationPath(callback) {
 
     // `npm bin` will output the path where binary files should be installed
-    exec("npm bin", function(err, stdout, stderr) {
+    exec("npm bin", function (err, stdout, stderr) {
 
-        let dir =  null;
-        if (err || stderr || !stdout || stdout.length === 0)  {
+        let dir = null;
+        if (err || stderr || !stdout || stdout.length === 0) {
 
             // We couldn't infer path from `npm bin`. Let's try to get it from
             // Environment variables set by NPM when it runs.
@@ -55,7 +56,7 @@ function getInstallationPath(callback) {
 function verifyAndPlaceBinary(binName, binPath, callback) {
     if (!fs.existsSync(path.join(binPath, binName))) return callback(`Downloaded binary does not contain the binary specified in configuration - ${binName}`);
 
-    getInstallationPath(function(err, installationPath) {
+    getInstallationPath(function (err, installationPath) {
         if (err) return callback("Error getting binary installation path from `npm bin`");
 
         // Move the binary file
@@ -71,7 +72,7 @@ function validateConfiguration(packageJson) {
         return "'version' property must be specified";
     }
 
-    if (!packageJson.goBinary || typeof(packageJson.goBinary) !== "object") {
+    if (!packageJson.goBinary || typeof (packageJson.goBinary) !== "object") {
         return "'goBinary' property must be defined and be an object";
     }
 
@@ -159,7 +160,7 @@ function install(callback) {
 
     mkdirp.sync(opts.binPath);
     let ungz = zlib.createGunzip();
-    let untar = tar.Extract({path: opts.binPath});
+    let untar = tar.Extract({ path: opts.binPath });
 
     ungz.on('error', callback);
     untar.on('error', callback);
@@ -169,9 +170,9 @@ function install(callback) {
     untar.on('end', verifyAndPlaceBinary.bind(null, opts.binName, opts.binPath, callback));
 
     console.log("Downloading from URL: " + opts.url);
-    let req = request({uri: opts.url});
+    let req = request({ uri: opts.url });
     req.on('error', callback.bind(null, "Error downloading from URL: " + opts.url));
-    req.on('response', function(res) {
+    req.on('response', function (res) {
         if (res.statusCode !== 200) return callback("Error downloading binary. HTTP Status Code: " + res.statusCode);
 
         req.pipe(ungz).pipe(untar);
@@ -181,12 +182,12 @@ function install(callback) {
 function uninstall(callback) {
 
     let opts = parsePackageJson();
-    getInstallationPath(function(err, installationPath) {
+    getInstallationPath(function (err, installationPath) {
         if (err) callback("Error finding binary installation directory");
 
         try {
             fs.unlinkSync(path.join(installationPath, opts.binName));
-        } catch(ex) {
+        } catch (ex) {
             // Ignore errors when deleting the file.
         }
 
@@ -209,7 +210,7 @@ if (argv && argv.length > 2) {
         process.exit(1);
     }
 
-    actions[cmd](function(err) {
+    actions[cmd](function (err) {
         if (err) {
             console.error(err);
             process.exit(1);
